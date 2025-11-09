@@ -8,7 +8,6 @@ class MessageType:
     """消息类型常量"""
     GENERAL = "general"  # 普通消息
     LOST_AND_FOUND = "lost_and_found"  # 失物招领
-    CONFESSION = "confession"  # 表白墙
     HELP = "help"  # 求助
     ANNOUNCEMENT = "announcement"  # 公告
 

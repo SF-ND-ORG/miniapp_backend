@@ -1,7 +1,7 @@
-from typing import Optional, Tuple
+from typing import Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, String
+from sqlalchemy import or_
 
 from app.db.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
@@ -30,6 +30,25 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             db.commit()
             db.refresh(user)
         return user
+
+    def search(self, db: Session, query: str, limit: int = 50) -> list[User]:
+        """Search users by id, name, student id or openid."""
+        q = f"%{query}%"
+        base_query = db.query(User)
+        conditions: list = [
+            User.name.ilike(q),
+            User.student_id.ilike(q),
+            User.wechat_openid.ilike(q),
+        ]
+        if query.isdigit():
+            conditions.append(User.id == int(query))
+
+        return (
+            base_query.filter(or_(*conditions))
+            .order_by(User.id.asc())
+            .limit(limit)
+            .all()
+        )
 
 # 实例化仓库
 user_repository = UserRepository(User)

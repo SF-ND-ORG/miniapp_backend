@@ -1,11 +1,12 @@
-from typing import List, Optional, Literal
+from typing import Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from app.schemas.comment import  CommentMessageResponse,CommentMessageListResponse,CommentMessageCreate,CommentMessageUpdate,MessageStatusUpdate
+from app.schemas.comment import CommentMessageResponse, CommentMessageListResponse, CommentMessageCreate, CommentMessageUpdate, MessageStatusUpdate
 from app.db.session import get_db
 from app.core.security import get_openid, require_admin
 from app.db.repositories.comment import comment_repository
 from app.db.repositories.user import user_repository
 from sqlalchemy.orm import Session
+from app.services.sanitizer import sanitize_text
 MessageStatus = Literal["PENDING", "APPROVED", "REJECTED", "DELETED"]
 router = APIRouter()
 @router.get("/message",
@@ -59,9 +60,12 @@ def create_comment_message(
     user = user_repository.get_by_openid(db, openid)
     if not user:
         raise HTTPException(status_code=400, detail="未绑定用户")
+    # 清洗输入内容并限制长度，防止注入和超长payload
+    message_data.content = sanitize_text(message_data.content, max_length=500)  # type: ignore
+
     # 添加用户ID到消息数据
     message_data.user_id = user.id  # type: ignore
-    message = comment_repository.create(db=db, obj_in=message_data)
+    message = comment_repository.create(db=db, obj_in=message_data) #type: ignore
     return CommentMessageResponse.model_validate(message)
 
 @router.delete("/delete",
@@ -93,7 +97,10 @@ def update_wall_message(
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
     
-    updated_message = comment_repository.update(db=db, db_obj=message, obj_in=message_data)
+    if message_data.content:
+        message_data.content = sanitize_text(message_data.content, max_length=500)
+
+    updated_message = comment_repository.update(db=db, db_obj=message, obj_in=message_data) #type: ignore
     return CommentMessageResponse.model_validate(updated_message)
 
 @router.post("/like/{message_id}",

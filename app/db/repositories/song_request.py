@@ -63,7 +63,7 @@ class SongRequestRepository(BaseRepository[SongRequest, SongRequestSchema, SongR
             User.name,
             User.wechat_openid
         ).join(
-            User, User.id == SongRequest.user_id
+            User, SongRequest.user_id == User.id
         ).filter(
             SongRequest.status == status
         ).order_by(
@@ -117,7 +117,7 @@ class SongRequestRepository(BaseRepository[SongRequest, SongRequestSchema, SongR
             User.name,
             User.student_id
         ).join(
-            User, User.id == SongRequest.user_id
+            User, SongRequest.user_id == User.id
         ).filter(
             SongRequest.status == "approved"
         ).order_by(
@@ -148,7 +148,8 @@ class SongRequestRepository(BaseRepository[SongRequest, SongRequestSchema, SongR
             })
         
         return result
-    def get_requests_by_user_id(self, db: Session, user_id: int,status:List[str]) -> List[SongRequest]:
+
+    def get_requests_by_user_id(self, db: Session, user_id: int, status: List[str]) -> List[SongRequest]:
         """根据ID获取歌曲请求"""
         fetchall = db.query(SongRequest).filter(SongRequest.user_id == user_id, SongRequest.status.in_(status)).all()
         result = []
@@ -159,13 +160,13 @@ class SongRequestRepository(BaseRepository[SongRequest, SongRequestSchema, SongR
     def get_current_playing_song(self, db: Session) -> Optional[Dict[str, Any]]:
         """获取当前播放的歌曲"""
         # 查找状态为 "playing" 的歌曲，如果没有则返回队列中第一首
-        current = db.query(SongRequest).join(User).filter(
+        current = db.query(SongRequest).join(User, SongRequest.user_id == User.id).filter(
             SongRequest.status == "playing"
         ).first()
         
         if not current:
             # 如果没有正在播放的歌曲，返回队列中第一首已批准的歌曲
-            current = db.query(SongRequest).join(User).filter(
+            current = db.query(SongRequest).join(User, SongRequest.user_id == User.id).filter(
                 SongRequest.status == "approved"
             ).order_by(SongRequest.request_time.asc()).first()
         
@@ -227,7 +228,7 @@ class SongRequestRepository(BaseRepository[SongRequest, SongRequestSchema, SongR
         status_filter: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """获取歌曲历史记录（分页）"""
-        query = db.query(SongRequest).join(User)
+        query = db.query(SongRequest).join(User, SongRequest.user_id == User.id)
         
         # 日期筛选
         if date:
@@ -279,7 +280,7 @@ class SongRequestRepository(BaseRepository[SongRequest, SongRequestSchema, SongR
         status_filter: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """获取待审核的歌曲列表（分页）"""
-        query = db.query(SongRequest).join(User)
+        query = db.query(SongRequest).join(User, SongRequest.user_id == User.id)
         
         # 状态筛选 - 默认只显示待审核的
         if status_filter:

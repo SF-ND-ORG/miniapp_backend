@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 
-from app.schemas.song import PlayerPlayedRequest, CurrentSongResponse
+from app.schemas.song import PlayerPlayedRequest
 from app.db.repositories import song_request_repository
 from app.db.session import get_db
-from app.core.security import require_admin
 
 router = APIRouter()
 

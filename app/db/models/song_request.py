@@ -22,11 +22,11 @@ class SongRequest(BaseModel):
     review_time = Column(DateTime, nullable=True)
     # 审核理由
     review_reason = Column(Text, nullable=True)
-    # 审核人ID，外键，关联到管理员
-    reviewer_id = Column(Integer, ForeignKey("admins.id"), nullable=True)
+    # 审核人ID，外键，关联到管理员（用户表）
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # 关系
-    user = relationship("User", back_populates="song_requests")
+    user = relationship("User", back_populates="song_requests", foreign_keys=[user_id])
     
     def __repr__(self):
         return f"<SongRequest {self.id} (song_id={self.song_id}, status={self.status})>"

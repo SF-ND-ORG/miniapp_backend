@@ -6,7 +6,7 @@ from app.schemas.base import BaseSchema
 
 
 # 定义消息类型和状态的字面量类型
-MessageType = Literal["general", "lost_and_found", "confession", "help", "announcement"]
+MessageType = Literal["general", "lost_and_found", "help", "announcement"]
 MessageStatus = Literal["PENDING", "APPROVED", "REJECTED", "DELETED"]
 
 

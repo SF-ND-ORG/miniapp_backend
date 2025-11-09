@@ -162,7 +162,7 @@ class WallRepository(BaseRepository[WallMessage, WallMessageCreate, WallMessageU
         
         # 按类型统计
         type_stats = {}
-        message_types = ["general", "lost_and_found", "confession", "help", "announcement"]
+        message_types = ["general", "lost_and_found", "help", "announcement"]
         for msg_type in message_types:
             count = db.query(self.model).filter(
                 and_(

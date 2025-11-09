@@ -1,7 +1,6 @@
 from typing import List, Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-
 from app.db.session import get_db
 from app.db.repositories.wall import wall_repository
 from app.db.repositories.user import user_repository
@@ -14,13 +13,14 @@ from app.schemas.wall import (
     MessageStatusUpdate
 )
 from app.core.security import get_openid, require_admin
+from app.services.sanitizer import sanitize_text
 
 
 # 定义类型
-MessageType = Literal["general", "lost_and_found", "confession", "help", "announcement"]
+MessageType = Literal["general", "lost_and_found", "help", "announcement"]
 MessageStatus = Literal["PENDING", "APPROVED", "REJECTED", "DELETED"]
 
-router = APIRouter()    
+router = APIRouter()
 
 @router.get("/messages",
             response_model=WallMessageListResponse,
@@ -37,6 +37,7 @@ def get_wall_messages(
 ):
     """获取墙消息列表"""
     skip = (page - 1) * page_size
+    keyword = sanitize_text(keyword, max_length=100) if keyword else None
     
     if keyword:
         messages = wall_repository.search_messages(
@@ -143,7 +144,14 @@ def create_wall_message(
     
     # 添加用户ID到消息数据
     message_data.user_id = user.id  # type: ignore
-    
+
+    # 清洗文本字段，避免注入及敏感字符
+    message_data.title = sanitize_text(message_data.title, max_length=200) if message_data.title else None
+    message_data.content = sanitize_text(message_data.content, max_length=2000)  # type: ignore
+    message_data.contact_info = sanitize_text(message_data.contact_info, max_length=200) if message_data.contact_info else None
+    message_data.location = sanitize_text(message_data.location, max_length=200) if message_data.location else None
+    message_data.tags = sanitize_text(message_data.tags, max_length=500) if message_data.tags else None
+
     message = wall_repository.create(db=db, obj_in=message_data)
     return WallMessageResponse.model_validate(message)
 
@@ -162,6 +170,17 @@ def update_wall_message(
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
     
+    if message_data.title:
+        message_data.title = sanitize_text(message_data.title, max_length=200)
+    if message_data.content:
+        message_data.content = sanitize_text(message_data.content, max_length=2000)
+    if message_data.contact_info:
+        message_data.contact_info = sanitize_text(message_data.contact_info, max_length=200)
+    if message_data.location:
+        message_data.location = sanitize_text(message_data.location, max_length=200)
+    if message_data.tags:
+        message_data.tags = sanitize_text(message_data.tags, max_length=500)
+
     updated_message = wall_repository.update(db=db, db_obj=message, obj_in=message_data)
     return WallMessageResponse.model_validate(updated_message)
 

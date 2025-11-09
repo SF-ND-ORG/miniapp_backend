@@ -25,6 +25,8 @@ class Settings:
     JWT_SECRET: str = os.getenv("JWT_SECRET", "your-super-secret-key")
     ACCESS_TOKEN_EXPIRE_HOURS: int = 24
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    RATE_LIMIT_MAX_REQUESTS: int = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "120"))
+    RATE_LIMIT_WINDOW_SECONDS: int = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
     
     # WeChat配置
     WECHAT_APPID: str = os.getenv("WECHAT_APPID","ber")
@@ -43,6 +45,13 @@ class Settings:
         'ojeMl5wp-gpIUw2TJiXZUUfZWPI8'
     ]
 
+    # Admin panel shared secret
+    ADMIN_PANEL_TOKEN: str = os.getenv("ADMIN_PANEL_TOKEN", "change-me")
+
+    # Config override file path
+    CONFIG_FILE_PATH: str = os.getenv("CONFIG_FILE_PATH", "app_config.json")
+
     PICTURE_UPLOAD_DIR: str = "static/pictures"
+    EXCEL_UPLOAD_DIR: str = "static/excels"
 
 settings = Settings()

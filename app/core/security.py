@@ -1,3 +1,5 @@
+import hmac
+
 import jwt
 from fastapi import HTTPException, Header, Depends
 from sqlalchemy.orm import Session
@@ -5,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.session import get_db
 from app.db.repositories.user import user_repository
+from app.services.config_manager import get_admin_openids
 
 def get_openid(authorization: str = Header(...), db: Session = Depends(get_db)) -> str:
     """
@@ -46,6 +49,13 @@ def require_admin(
     current_user = Depends(get_current_user)
 ):
     """要求管理员权限"""
-    if not current_user.is_admin and current_user.wechat_openid not in settings.ADMIN_OPENIDS:
+    admin_openids = get_admin_openids()
+    if not current_user.is_admin and current_user.wechat_openid not in admin_openids:
         raise HTTPException(status_code=403, detail="需要管理员权限")
     return current_user
+
+
+def require_admin_panel_token(x_admin_token: str = Header(...)) -> None:
+    """Validate admin panel shared token header."""
+    if not hmac.compare_digest(x_admin_token, settings.ADMIN_PANEL_TOKEN):
+        raise HTTPException(status_code=401, detail="Invalid admin panel token")

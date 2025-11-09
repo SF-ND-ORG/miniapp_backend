@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员控制台</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+    <main class="page">
+        <section class="card">
+            <h1 class="card__title">管理员控制台</h1>
+            <p class="card__subtitle">使用后端颁发的 <code>X-Admin-Token</code> 访问密钥登录。</p>
+            <form id="token-form" class="token-form">
+                <label for="token" class="token-form__label">访问密钥</label>
+                <input id="token" type="password" autocomplete="off" class="token-form__input"
+                    placeholder="请输入 X-Admin-Token">
+                <button type="submit" class="token-form__button">登录</button>
+            </form>
+            <p id="login-status" class="login-status"></p>
+        </section>
+
+        <section id="panel" class="card card--panel hidden">
+            <header class="panel__header">
+                <h2>后台控制面板</h2>
+                <button id="logout" class="panel__logout">退出</button>
+            </header>
+
+            <div class="panel__section">
+                <h3 class="section__title">用户管理</h3>
+                <div class="panel__actions">
+                    <form id="search-form" class="search-form" autocomplete="off">
+                        <label for="search" class="search-form__label">搜索用户</label>
+                        <input id="search" type="search" class="search-form__input" placeholder="姓名、学号、OpenID"
+                            maxlength="64">
+                        <button type="submit" class="search-form__button">搜索</button>
+                    </form>
+                    <div class="panel__actions-right">
+                        <button id="refresh" class="panel__refresh">刷新结果</button>
+                        <span id="status" class="panel__status"></span>
+                    </div>
+                </div>
+
+                <table class="table" aria-label="用户列表">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>姓名</th>
+                            <th>学号</th>
+                            <th>绑定微信</th>
+                            <th>是否管理员</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users"></tbody>
+                </table>
+            </div>
+
+            <div class="panel__section">
+                <h3 class="section__title">配置管理</h3>
+                <form id="config-form" class="config-form">
+                    <div class="form-group">
+                        <label for="config-admin-openids">额外管理员 OpenID 列表</label>
+                        <textarea id="config-admin-openids" class="form-textarea" placeholder="每行一个 OpenID"></textarea>
+                        <p class="form-help">留空可移除覆盖值，仅依赖后端默认配置。</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="config-rate-limit-max">速率限制：窗口内最大请求数</label>
+                            <input id="config-rate-limit-max" type="number" min="1" class="form-input"
+                                placeholder="例如 100">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-rate-limit-window">速率限制：窗口长度（秒）</label>
+                            <input id="config-rate-limit-window" type="number" min="1" class="form-input"
+                                placeholder="例如 60">
+                        </div>
+                    </div>
+
+                    <div class="config-form__footer">
+                        <button type="submit" class="config-form__button">保存配置</button>
+                        <span id="config-status" class="panel__status"></span>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="./panel.js" type="module"></script>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.core.config import settings

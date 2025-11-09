@@ -20,7 +20,11 @@ class User(BaseModel):
     is_admin = Column(Boolean, nullable=False, default=False)
     
     # 关系
-    song_requests = relationship("SongRequest", back_populates="user")
+    song_requests = relationship(
+        "SongRequest",
+        back_populates="user",
+        foreign_keys="SongRequest.user_id"
+    )
     
     def __repr__(self):
         return f"<User {self.name} ({self.student_id})>"

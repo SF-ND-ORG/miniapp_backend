@@ -3,3 +3,5 @@
 .env
 *__pycache__*
 static/
+npmlog.txt
+app_config.json

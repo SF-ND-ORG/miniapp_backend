@@ -110,16 +110,14 @@ python migrate.py --delete
 ```
 
 ### 5. 启动服务
+先启动node.js网易云音乐API服务，参考[网易云音乐API项目](https://github.com/Binaryify/NeteaseCloudMusicApi)
+```bash
+npx NeteaseCloudMusicApi@latest
+```
 
 ```bash
 # 使用run.py启动
 python run.py
-
-# 或使用uvicorn直接启动
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# 开发时可以使用这种方式启动
-fastapi dev app/main.py
 ```
 
 服务启动后，可访问 http://localhost:8000/docs 查看API文档。
