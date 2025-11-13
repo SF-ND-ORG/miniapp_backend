@@ -51,6 +51,9 @@ class Settings:
     # Config override file path
     CONFIG_FILE_PATH: str = os.getenv("CONFIG_FILE_PATH", "app_config.json")
 
+    # Player API shared secret
+    PLAYER_ACCESS_TOKEN: str = os.getenv("PLAYER_ACCESS_TOKEN", "change-player-token")
+
     PICTURE_UPLOAD_DIR: str = "static/pictures"
     EXCEL_UPLOAD_DIR: str = "static/excels"
 

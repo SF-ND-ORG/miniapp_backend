@@ -59,3 +59,12 @@ def require_admin_panel_token(x_admin_token: str = Header(...)) -> None:
     """Validate admin panel shared token header."""
     if not hmac.compare_digest(x_admin_token, settings.ADMIN_PANEL_TOKEN):
         raise HTTPException(status_code=401, detail="Invalid admin panel token")
+
+
+def require_player_token(x_player_token: str = Header(..., alias="X-Player-Token")) -> None:
+    """Validate the shared token used by the desktop player."""
+    expected = settings.PLAYER_ACCESS_TOKEN
+    if not expected:
+        raise HTTPException(status_code=500, detail="Player access token not configured")
+    if not hmac.compare_digest(x_player_token, expected):
+        raise HTTPException(status_code=401, detail="Invalid player access token")

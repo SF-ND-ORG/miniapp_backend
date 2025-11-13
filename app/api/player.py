@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from app.schemas.song import PlayerPlayedRequest
 from app.db.repositories import song_request_repository
 from app.db.session import get_db
+from app.core.security import require_player_token
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_player_token)])
 
 @router.get("/queue",summary="获取歌曲队列",description="获取已批准的歌曲队列",
             responses={
@@ -35,6 +36,14 @@ router = APIRouter()
                             "example": {"detail": "没有找到已批准的歌曲队列"}
                         }
                     }
+                },
+                401: {
+                    "description": "播放器认证失败",
+                    "content": {
+                        "application/json": {
+                            "example": {"detail": "Invalid player access token"}
+                        }
+                    }
                 }
             })
 def player_queue(db: Session = Depends(get_db)) -> Dict[str, Any]:
@@ -59,6 +68,14 @@ def player_queue(db: Session = Depends(get_db)) -> Dict[str, Any]:
                         "content": {
                             "application/json": {
                                 "example": {"detail": "请求ID无效或歌曲未找到"}
+                            }
+                        }
+                    },
+                    401: {
+                        "description": "播放器认证失败",
+                        "content": {
+                            "application/json": {
+                                "example": {"detail": "Invalid player access token"}
                             }
                         }
                     }
