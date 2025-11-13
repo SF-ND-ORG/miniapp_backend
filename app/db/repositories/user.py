@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Iterable, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -27,6 +27,8 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
         if user:
             user.wechat_openid = openid  # type: ignore
             user.bind_time = datetime.now()  # type: ignore
+            if not getattr(user, "nickname", None):
+                user.nickname = user.name  # type: ignore
             db.commit()
             db.refresh(user)
         return user
@@ -39,6 +41,7 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             User.name.ilike(q),
             User.student_id.ilike(q),
             User.wechat_openid.ilike(q),
+            User.nickname.ilike(q),
         ]
         if query.isdigit():
             conditions.append(User.id == int(query))
@@ -49,6 +52,12 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             .limit(limit)
             .all()
         )
+
+    def get_by_ids(self, db: Session, user_ids: Iterable[int]) -> list[User]:
+        ids = list(set(user_ids))
+        if not ids:
+            return []
+        return db.query(User).filter(User.id.in_(ids)).all()
 
 # 实例化仓库
 user_repository = UserRepository(User)

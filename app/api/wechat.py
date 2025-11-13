@@ -4,12 +4,20 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.schemas.auth import LoginRequest, BindRequest, RefreshTokenRequest, TokenResponse
 from app.schemas.song import SongRequest
+from app.schemas.user import UserProfileUpdate, UserResponse
 from app.services.auth import create_token_pair, verify_wechat_code, verify_refresh_token
 from app.db.repositories import user_repository, song_request_repository
 from app.core.security import get_openid
 from app.db.session import get_db
+from app.services.sanitizer import sanitize_text
 
 router = APIRouter()
+
+
+def _build_user_response(user) -> UserResponse:
+    base = UserResponse.model_validate(user)
+    display_name = getattr(user, "nickname", None) or getattr(user, "name", None)
+    return base.model_copy(update={"display_name": display_name})
 
 
 @router.post("/login", response_model=TokenResponse,
@@ -75,6 +83,8 @@ def wechat_bind(
         db: Session = Depends(get_db),
         openid: str = Depends(get_openid)
 ) -> Dict[str, Any]:
+    if not data.agree_privacy:
+        raise HTTPException(status_code=400, detail="请先阅读并同意隐私声明")
     # 检查学生ID和姓名是否存在并匹配
     user = user_repository.get_by_student_id_and_name(db, data.student_id, data.name)
 
@@ -216,15 +226,16 @@ def get_all_song_requests_of_user(
     return {"requests": requests}
 
 
-@router.get("/userinfo",
-           summary="获取用户信息",
-           response_model=Dict[str, Any],
-           description="获取当前用户的详细信息"
-           )
+@router.get(
+    "/userinfo",
+    summary="获取用户信息",
+    response_model=UserResponse,
+    description="获取当前用户的详细信息"
+)
 def get_user_info(
         db: Session = Depends(get_db),
         openid: str = Depends(get_openid)
-) -> Dict[str, Any]:
+) -> UserResponse:
     """
     获取用户信息
     """
@@ -232,11 +243,44 @@ def get_user_info(
     if not user:
         raise HTTPException(status_code=400, detail="未绑定用户")
 
-    return {
-        "id": user.id,
-        "name": user.name,
-        "student_id": user.student_id,
-        "wechat_openid": user.wechat_openid,
-        "bind_time": user.bind_time,
-        "is_admin": user.is_admin
-    }
+    return _build_user_response(user)
+
+
+@router.put(
+    "/profile",
+    response_model=UserResponse,
+    summary="更新个人信息",
+    description="更新当前绑定用户的头像与昵称"
+)
+def update_profile(
+    payload: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    openid: str = Depends(get_openid)
+) -> UserResponse:
+    user = user_repository.get_by_openid(db, openid)
+    if not user:
+        raise HTTPException(status_code=400, detail="未绑定用户")
+
+    has_change = False
+
+    if payload.nickname is not None:
+        nickname = sanitize_text(payload.nickname, max_length=50)
+        if not nickname:
+            raise HTTPException(status_code=400, detail="昵称不能为空")
+        user.nickname = nickname  # type: ignore
+        has_change = True
+
+    if payload.avatar_url is not None:
+        avatar_url = payload.avatar_url.strip()
+        if len(avatar_url) > 255:
+            raise HTTPException(status_code=400, detail="头像链接过长")
+        user.avatar_url = avatar_url or None  # type: ignore
+        has_change = True
+
+    if not has_change:
+        raise HTTPException(status_code=400, detail="未提供需要更新的字段")
+
+    db.commit()
+    db.refresh(user)
+
+    return _build_user_response(user)

@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Any, Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.schemas.comment import CommentMessageResponse, CommentMessageListResponse, CommentMessageCreate, CommentMessageUpdate, MessageStatusUpdate
 from app.db.session import get_db
@@ -9,6 +9,35 @@ from sqlalchemy.orm import Session
 from app.services.sanitizer import sanitize_text
 MessageStatus = Literal["PENDING", "APPROVED", "REJECTED", "DELETED"]
 router = APIRouter()
+
+
+def _build_author_map(users) -> dict[int, Any]:
+    mapping: dict[int, Any] = {}
+    for user in users:
+        user_id = getattr(user, "id", None)
+        if isinstance(user_id, int):
+            mapping[user_id] = user
+    return mapping
+
+
+def _resolve_author(message, author_map: dict[int, Any]):
+    user_id = getattr(message, "user_id", None)
+    if isinstance(user_id, int):
+        return author_map.get(user_id)
+    return None
+
+
+def _build_comment_response(message, author=None) -> CommentMessageResponse:
+    base = CommentMessageResponse.model_validate(message)
+    if author is None:
+        return base
+    extra = {
+        "author_name": getattr(author, "name", None),
+        "author_nickname": getattr(author, "nickname", None),
+        "author_display_name": getattr(author, "nickname", None) or getattr(author, "name", None),
+        "author_avatar_url": getattr(author, "avatar_url", None),
+    }
+    return base.model_copy(update=extra)
 @router.get("/message",
             response_model=CommentMessageListResponse,
             summary="获取评论内容",
@@ -41,8 +70,22 @@ def get_comment_messages(
             db=db,
             wall_id=wall_id,
         )
+    user_ids: list[int] = []
+    for msg in messages:
+        uid = getattr(msg, "user_id", None)
+        if isinstance(uid, int):
+            user_ids.append(uid)
+
+    authors = user_repository.get_by_ids(db, user_ids)
+    author_map = _build_author_map(authors)
+
+    response_items = [
+        _build_comment_response(msg, _resolve_author(msg, author_map))
+        for msg in messages
+    ]
+
     return CommentMessageListResponse(
-        items=[CommentMessageResponse.model_validate(msg) for msg in messages],
+        items=response_items,
         total=len(messages)
     )
 
@@ -66,7 +109,7 @@ def create_comment_message(
     # 添加用户ID到消息数据
     message_data.user_id = user.id  # type: ignore
     message = comment_repository.create(db=db, obj_in=message_data) #type: ignore
-    return CommentMessageResponse.model_validate(message)
+    return _build_comment_response(message, user)
 
 @router.delete("/delete",
              summary="删除评论",
@@ -101,7 +144,9 @@ def update_wall_message(
         message_data.content = sanitize_text(message_data.content, max_length=500)
 
     updated_message = comment_repository.update(db=db, db_obj=message, obj_in=message_data) #type: ignore
-    return CommentMessageResponse.model_validate(updated_message)
+    msg_user_id = getattr(updated_message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_comment_response(updated_message, author)
 
 @router.post("/like/{message_id}",
              response_model=CommentMessageResponse,
@@ -116,7 +161,9 @@ def like_wall_message(
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
     
-    return CommentMessageResponse.model_validate(message)
+    msg_user_id = getattr(message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_comment_response(message, author)
 
 
 @router.put("/status/{message_id}",
@@ -134,4 +181,6 @@ def update_message_status(
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
     
-    return CommentMessageResponse.model_validate(message)
+    msg_user_id = getattr(message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_comment_response(message, author)

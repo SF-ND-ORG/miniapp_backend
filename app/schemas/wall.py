@@ -47,6 +47,10 @@ class WallMessageResponse(WallMessageBase):
     timestamp: datetime
     created_at: datetime
     updated_at: datetime
+    author_name: Optional[str] = None
+    author_nickname: Optional[str] = None
+    author_display_name: Optional[str] = None
+    author_avatar_url: Optional[str] = None
 
 
 class WallMessageListResponse(BaseSchema):

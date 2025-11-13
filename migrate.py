@@ -46,6 +46,8 @@ def create_postgres_tables(delete_existing: bool):
             wechat_openid VARCHAR(50) UNIQUE,
             student_id VARCHAR(10) UNIQUE NOT NULL,
             name VARCHAR(50) NOT NULL,
+            nickname VARCHAR(50),
+            avatar_url VARCHAR(255),
             bind_time TIMESTAMP,
             is_admin BOOLEAN NOT NULL DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -35,6 +35,10 @@ class CommentMessageResponse(CommentMessageBase):
     created_at: datetime
     updated_at: datetime
     content:str
+    author_name: Optional[str] = None
+    author_nickname: Optional[str] = None
+    author_display_name: Optional[str] = None
+    author_avatar_url: Optional[str] = None
 
 class CommentStatisticsResponse(BaseSchema):
     """统计信息响应Schema"""

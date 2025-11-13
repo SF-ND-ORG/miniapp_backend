@@ -14,6 +14,10 @@ class User(BaseModel):
     student_id = Column(String, unique=True, index=True, nullable=False)
     # 姓名
     name = Column(String, nullable=False)
+    # 昵称
+    nickname = Column(String, nullable=True)
+    # 头像地址
+    avatar_url = Column(String, nullable=True)
     # 绑定时间
     bind_time = Column(DateTime, nullable=True)
     # 是否为管理员

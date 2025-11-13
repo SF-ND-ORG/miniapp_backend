@@ -1,4 +1,4 @@
-from typing import List, Optional, Literal
+from typing import Any, List, Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -21,6 +21,36 @@ MessageType = Literal["general", "lost_and_found", "help", "announcement"]
 MessageStatus = Literal["PENDING", "APPROVED", "REJECTED", "DELETED"]
 
 router = APIRouter()
+
+
+def _build_wall_message_response(message, author=None) -> WallMessageResponse:
+    base = WallMessageResponse.model_validate(message)
+    if author is None:
+        return base
+
+    extra = {
+        "author_name": getattr(author, "name", None),
+        "author_nickname": getattr(author, "nickname", None),
+        "author_display_name": getattr(author, "nickname", None) or getattr(author, "name", None),
+        "author_avatar_url": getattr(author, "avatar_url", None),
+    }
+    return base.model_copy(update=extra)
+
+
+def _build_author_map(users) -> dict[int, Any]:
+    mapping: dict[int, Any] = {}
+    for user in users:
+        user_id = getattr(user, "id", None)
+        if isinstance(user_id, int):
+            mapping[user_id] = user
+    return mapping
+
+
+def _resolve_author(message, author_map: dict[int, Any]):
+    user_id = getattr(message, "user_id", None)
+    if isinstance(user_id, int):
+        return author_map.get(user_id)
+    return None
 
 @router.get("/messages",
             response_model=WallMessageListResponse,
@@ -80,8 +110,21 @@ def get_wall_messages(
     )
     has_next = len(messages) == page_size
     
+    user_ids: list[int] = []
+    for msg in messages:
+        user_id = getattr(msg, "user_id", None)
+        if isinstance(user_id, int):
+            user_ids.append(user_id)
+    authors = user_repository.get_by_ids(db, user_ids)
+    author_map = _build_author_map(authors)
+
+    response_items = [
+        _build_wall_message_response(msg, _resolve_author(msg, author_map))
+        for msg in messages
+    ]
+
     return WallMessageListResponse(
-        items=[WallMessageResponse.model_validate(msg) for msg in messages],
+        items=response_items,
         total=total,
         page=page,
         page_size=page_size,
@@ -105,7 +148,17 @@ def get_popular_messages(
         skip=skip,
         limit=page_size
     )
-    return [WallMessageResponse.model_validate(msg) for msg in messages]
+    user_ids: list[int] = []
+    for msg in messages:
+        user_id = getattr(msg, "user_id", None)
+        if isinstance(user_id, int):
+            user_ids.append(user_id)
+    authors = user_repository.get_by_ids(db, user_ids)
+    author_map = _build_author_map(authors)
+    return [
+        _build_wall_message_response(msg, _resolve_author(msg, author_map))
+        for msg in messages
+    ]
 
 
 @router.get("/messages/{message_id}",
@@ -124,7 +177,9 @@ def get_wall_message(
     # 增加浏览次数
     wall_repository.increment_view_count(db=db, message_id=message_id)
     
-    return WallMessageResponse.model_validate(message)
+    msg_user_id = getattr(message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_wall_message_response(message, author)
 
 
 @router.post("/messages",
@@ -153,7 +208,7 @@ def create_wall_message(
     message_data.tags = sanitize_text(message_data.tags, max_length=500) if message_data.tags else None
 
     message = wall_repository.create(db=db, obj_in=message_data)
-    return WallMessageResponse.model_validate(message)
+    return _build_wall_message_response(message, user)
 
 
 @router.put("/messages/{message_id}",
@@ -182,7 +237,9 @@ def update_wall_message(
         message_data.tags = sanitize_text(message_data.tags, max_length=500)
 
     updated_message = wall_repository.update(db=db, db_obj=message, obj_in=message_data)
-    return WallMessageResponse.model_validate(updated_message)
+    msg_user_id = getattr(updated_message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_wall_message_response(updated_message, author)
 
 
 @router.delete("/messages/{message_id}",
@@ -214,7 +271,9 @@ def like_wall_message(
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
     
-    return WallMessageResponse.model_validate(message)
+    msg_user_id = getattr(message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_wall_message_response(message, author)
 
 
 @router.put("/messages/{message_id}/status",
@@ -232,7 +291,9 @@ def update_message_status(
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
     
-    return WallMessageResponse.model_validate(message)
+    msg_user_id = getattr(message, "user_id", None)
+    author = user_repository.get(db, msg_user_id) if isinstance(msg_user_id, int) else None
+    return _build_wall_message_response(message, author)
 
 
 @router.get("/statistics",
@@ -287,8 +348,20 @@ def get_admin_messages(
     total = len(messages) + skip if len(messages) == page_size else skip + len(messages)
     has_next = len(messages) == page_size
     
+    admin_user_ids: list[int] = []
+    for msg in messages:
+        uid = getattr(msg, "user_id", None)
+        if isinstance(uid, int):
+            admin_user_ids.append(uid)
+    admin_authors = user_repository.get_by_ids(db, admin_user_ids)
+    author_map = _build_author_map(admin_authors)
+    response_items = [
+        _build_wall_message_response(msg, _resolve_author(msg, author_map))
+        for msg in messages
+    ]
+
     return WallMessageListResponse(
-        items=[WallMessageResponse.model_validate(msg) for msg in messages],
+        items=response_items,
         total=total,
         page=page,
         page_size=page_size,

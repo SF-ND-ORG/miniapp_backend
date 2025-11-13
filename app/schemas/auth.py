@@ -7,6 +7,7 @@ class LoginRequest(BaseModel):
 class BindRequest(BaseModel):
     student_id: str
     name: str
+    agree_privacy: bool = False
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
