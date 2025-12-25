@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.api import wechat, songs, player, wall, comment, resources, grade, admin
 from app.core.config import settings
-from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
+from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware, SQLInjectionMiddleware
 
 # 创建FastAPI应用实例
 app = FastAPI(title="校园点歌系统API",
@@ -11,6 +11,7 @@ app = FastAPI(title="校园点歌系统API",
     version="1.0.0")
 
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(SQLInjectionMiddleware)
 app.add_middleware(
     RateLimitMiddleware,
     max_requests=settings.RATE_LIMIT_MAX_REQUESTS,

@@ -133,7 +133,8 @@ def delete_comment_message(
 def update_wall_message(
     message_id: int,
     message_data: CommentMessageUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    openid:str = Depends(get_openid)
 ):
     """更新墙消息"""
     message = comment_repository.get(db=db, id=message_id)
@@ -154,7 +155,8 @@ def update_wall_message(
              description="为指定消息点赞")
 def like_wall_message(
     message_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    openid:str = Depends(get_openid)
 ):
     """为消息点赞"""
     message = comment_repository.increment_like_count(db=db, message_id=message_id)

@@ -22,7 +22,7 @@ async def delete_file(uid:str,openid: str = Depends(get_openid)):
     return {"success": True}
 
 @router.get("/image",summary="下载图片",description="下载指定的图片文件")  
-async def download_file(uid:str,openid: str = Depends(get_openid)):
+async def download_file(uid:str):
     extension = resourcesManager.get_extension(uid)
     file_path = resourcesManager.get_picture_path(uid, extension)
     return FileResponse(path = file_path,filename=f"{uid}.{extension}")
