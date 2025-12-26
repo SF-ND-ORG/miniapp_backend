@@ -8,6 +8,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.config import settings
 from app.services.config_manager import get_rate_limit_settings
 
 
@@ -52,7 +53,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class SQLInjectionMiddleware(BaseHTTPMiddleware):
     """Detect simple SQL injection payloads in query and JSON bodies."""
 
-    def __init__(self, app, patterns: list[str] | None = None, max_body_bytes: int = 131072):
+    def __init__(
+        self,
+        app,
+        patterns: list[str] | None = None,
+        max_json_body_bytes: int | None = None,
+        max_upload_body_bytes: int | None = None,
+    ):
         super().__init__(app)
         default_patterns = patterns or [
             r"union\s+select",
@@ -68,7 +75,8 @@ class SQLInjectionMiddleware(BaseHTTPMiddleware):
             r"xp_",
         ]
         self._compiled = [re.compile(pat, re.IGNORECASE) for pat in default_patterns]
-        self.max_body_bytes = max_body_bytes
+        self.max_json_body_bytes = max_json_body_bytes if max_json_body_bytes is not None else settings.MAX_JSON_BODY_BYTES
+        self.max_upload_body_bytes = max_upload_body_bytes if max_upload_body_bytes is not None else settings.MAX_UPLOAD_BODY_BYTES
 
     def _iter_strings(self, payload: Any) -> Iterable[str]:
         if isinstance(payload, str):
@@ -86,20 +94,35 @@ class SQLInjectionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         suspicious_keys: list[str] = []
 
+        content_type = request.headers.get("content-type", "").lower()
+        is_json = "application/json" in content_type
+        body_limit = self.max_json_body_bytes if is_json else self.max_upload_body_bytes
+
+        content_length = request.headers.get("content-length")
+        if content_length and body_limit:
+            try:
+                if int(content_length) > body_limit:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": "Request body too large"},
+                    )
+            except ValueError:
+                # If header is invalid, fall back to reading the body
+                pass
+
         for key, value in request.query_params.multi_items():
             if value and self._is_suspicious(value):
                 suspicious_keys.append(f"query:{key}")
 
         body_bytes = await request.body()
         if body_bytes:
-            if len(body_bytes) > self.max_body_bytes:
+            if body_limit and len(body_bytes) > body_limit:
                 return JSONResponse(
                     status_code=413,
                     content={"detail": "Request body too large"},
                 )
 
-            content_type = request.headers.get("content-type", "").lower()
-            if "application/json" in content_type:
+            if is_json:
                 try:
                     payload = json.loads(body_bytes.decode("utf-8", errors="ignore"))
                     for value in self._iter_strings(payload):

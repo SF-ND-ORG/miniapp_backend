@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.db.repositories.wall import wall_repository
 from app.db.repositories.user import user_repository
+from app.db.repositories.comment import comment_repository
 from app.schemas.wall import (
     WallMessageCreate,
     WallMessageUpdate,
@@ -247,13 +248,16 @@ def update_wall_message(
                description="删除指定ID的消息")
 def delete_wall_message(
     message_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin_user = Depends(require_admin)
 ):
     """删除墙消息"""
     message = wall_repository.get(db=db, id=message_id)
     if not message:
         raise HTTPException(status_code=404, detail="消息不存在")
-    
+
+    # 先清理关联评论，避免外键约束报错
+    comment_repository.delete_by_wall_id(db=db, wall_id=message_id)
     wall_repository.remove(db=db, id=message_id)
     return {"message": "消息已删除"}
 
@@ -264,7 +268,8 @@ def delete_wall_message(
              description="为指定消息点赞")
 def like_wall_message(
     message_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    openid: str = Depends(get_openid)
 ):
     """为消息点赞"""
     message = wall_repository.increment_like_count(db=db, message_id=message_id)

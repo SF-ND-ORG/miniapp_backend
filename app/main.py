@@ -12,11 +12,7 @@ app = FastAPI(title="校园点歌系统API",
 
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(SQLInjectionMiddleware)
-app.add_middleware(
-    RateLimitMiddleware,
-    max_requests=settings.RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=settings.RATE_LIMIT_WINDOW_SECONDS,
-)
+
 
 # 注册路由
 app.include_router(wechat.router, prefix=f"{settings.API_V1_STR}/wechat", tags=["微信小程序"])

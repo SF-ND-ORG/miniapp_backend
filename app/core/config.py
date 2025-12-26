@@ -27,6 +27,10 @@ class Settings:
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     RATE_LIMIT_MAX_REQUESTS: int = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "120"))
     RATE_LIMIT_WINDOW_SECONDS: int = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
+
+    # 请求体大小限制（字节）
+    MAX_JSON_BODY_BYTES: int = int(os.getenv("MAX_JSON_BODY_BYTES", "131072"))
+    MAX_UPLOAD_BODY_BYTES: int = int(os.getenv("MAX_UPLOAD_BODY_BYTES", str(50 * 1024 * 1024)))
     
     # WeChat配置
     WECHAT_APPID: str = os.getenv("WECHAT_APPID","ber")

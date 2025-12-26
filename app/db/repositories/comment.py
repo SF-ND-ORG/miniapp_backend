@@ -129,6 +129,16 @@ class CommentRepository(BaseRepository[CommentMessage, CommentMessageUpdate, Com
             db.commit()
             db.refresh(message)
         return message
+
+    def delete_by_wall_id(self, db: Session, wall_id: int) -> int:
+        """删除指定墙下的所有评论，避免外键残留"""
+        deleted = (
+            db.query(self.model)
+            .filter(self.model.wall_id == wall_id)
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+        return deleted
     
     def count_messages(
         self,
