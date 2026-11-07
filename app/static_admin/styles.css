@@ -318,6 +318,307 @@ body {
     color: #b91c1c;
 }
 
+.table__button--success {
+    background: rgba(16, 185, 129, 0.16);
+    color: #047857;
+}
+
+.section__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.player-section {
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(124, 58, 237, 0.06) 100%);
+}
+
+.player-autoplay {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #334155;
+    cursor: pointer;
+    user-select: none;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 96px;
+}
+
+.player__art {
+    flex: 0 0 96px;
+    width: 96px;
+    height: 96px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 16px 30px rgba(37, 99, 235, 0.25);
+}
+
+.player__art-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.player__art-placeholder {
+    font-size: 40px;
+    line-height: 1;
+}
+
+.player__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.player__eyebrow {
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6366f1;
+}
+
+.player__title {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.3;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.player__meta {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: #475569;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.player__badges {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 0;
+    flex-wrap: wrap;
+}
+
+.badge--trial {
+    background: rgba(245, 158, 11, 0.16);
+    color: #b45309;
+}
+
+.player__control-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.player__button {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+}
+
+.player__button:hover:not(:disabled) {
+    border-color: rgba(59, 130, 246, 0.55);
+    color: #1d4ed8;
+}
+
+.player__button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.player__button--primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+}
+
+.player__button--primary:hover:not(:disabled) {
+    color: #fff;
+    opacity: 0.92;
+}
+
+.player__audio {
+    width: 100%;
+    height: 44px;
+}
+
+.player__queue {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.player__queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.player__queue-header h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.player-queue__song {
+    display: block;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.player-queue__artist {
+    display: block;
+    margin-top: 2px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.player-queue__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.player-queue__row--active {
+    background: rgba(37, 99, 235, 0.08);
+    box-shadow: inset 3px 0 0 #2563eb;
+}
+
+.netease-section {
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(236, 72, 153, 0.16);
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(239, 68, 68, 0.04) 100%);
+}
+
+.netease-account {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.netease-account__avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(236, 72, 153, 0.25);
+}
+
+.netease-account__name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.netease-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.netease-tab {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+}
+
+.netease-tab--active {
+    border-color: transparent;
+    background: linear-gradient(135deg, #ec4899 0%, #ef4444 100%);
+    color: #fff;
+}
+
+.netease-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.netease-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.netease-captcha-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.netease-captcha-row .form-input {
+    flex: 1 1 180px;
+}
+
+.netease-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.netease-qr__img {
+    width: 220px;
+    max-width: 100%;
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #fff;
+}
+
+.netease-qr__status {
+    margin: 0;
+    font-size: 14px;
+    color: #475569;
+}
+
+.netease-qr__status--error {
+    color: #b91c1c;
+}
+
 .hidden {
     display: none !important;
 }
@@ -336,5 +637,27 @@ body {
 
     .panel__actions-right {
         justify-content: space-between;
+    }
+
+    .player {
+        align-items: flex-start;
+    }
+
+    .player__art {
+        flex-basis: 72px;
+        width: 72px;
+        height: 72px;
+    }
+
+    .player__title {
+        font-size: 18px;
+    }
+
+    .player__button {
+        flex: 1 1 calc(50% - 10px);
+    }
+
+    .netease-captcha-row .form-input {
+        flex-basis: 100%;
     }
 }

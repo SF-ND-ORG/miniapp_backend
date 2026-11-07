@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_, or_
 
-from app.db.models.wall import WallMessage, MessageType, MessageStatus
+from app.db.models.wall import WallMessage
 from app.db.repositories.base import BaseRepository
 from app.db.repositories.resources import resourcesManager
 from app.schemas.wall import WallMessageCreate, WallMessageUpdate
@@ -157,34 +157,59 @@ class WallRepository(BaseRepository[WallMessage, WallMessageCreate, WallMessageU
         message_id: int,
         status: str
     ) -> Optional[WallMessage]:
-        """更新消息状态；当消息被驳回(REJECTED)时，清理其关联图片文件"""
+        """更新消息状态。
+
+        驳回/撤回只改变状态，不删除图片：审核操作是可逆的，
+        管理员之后可以通过“恢复”把状态改回 APPROVED，此时仍需读取原图片。
+        图片只在消息被彻底删除时才清理。
+        """
         message = self.get(db, message_id)
         if message:
-            old_status = message.status
             db.query(self.model).filter(self.model.id == message_id).update(
                 {self.model.status: status}
             )
             db.commit()
             db.refresh(message)
-            # 仅在被驳回（且之前不是已驳回）时删除图片，避免重复删除与误删
-            if status == MessageStatus.REJECTED and old_status != MessageStatus.REJECTED:
-                self._delete_message_pictures(message.files)
         return message
 
-    @staticmethod
-    def _delete_message_pictures(files: Optional[str]) -> None:
-        """按逗号分隔的 uid 列表删除磁盘上的图片文件（尽力而为，失败不影响主流程）"""
+    def remove(self, db: Session, *, id: int) -> Optional[WallMessage]:
+        """彻底删除消息，并清理不再被任何消息引用的图片文件。"""
+        message = self.get(db, id)
+        if not message:
+            return None
+        files = message.files
+        db.delete(message)
+        db.commit()
+        # 数据库记录删除成功后再清理磁盘，避免删除失败却丢失图片
+        self._delete_unreferenced_pictures(db, files)
+        return message
+
+    def _delete_unreferenced_pictures(self, db: Session, files: Optional[str]) -> None:
+        """删除不再被任何消息引用的图片（尽力而为，失败不影响主流程）。
+
+        同一个 uid 可能被多条消息引用，因此先检查其余消息，
+        只清理确实没有任何引用的文件，避免误删其他消息仍在使用的图片。
+        """
         if not files:
             return
-        uids = files.split(",")
-        for uid in uids:
-            uid = uid.strip()
-            if uid:
-                try:
-                    resourcesManager.delete_picture(uid)
-                except Exception:
-                    # 图片清理失败不应阻断状态更新，仅记录日志
-                    pass
+        uids = {uid.strip() for uid in files.split(",") if uid.strip()}
+        if not uids:
+            return
+
+        referenced = set()
+        rows = db.query(self.model.files).filter(self.model.files.isnot(None)).all()
+        for (row_files,) in rows:
+            for uid in (row_files or "").split(","):
+                uid = uid.strip()
+                if uid in uids:
+                    referenced.add(uid)
+
+        for uid in uids - referenced:
+            try:
+                resourcesManager.delete_picture(uid)
+            except Exception:
+                # 图片清理失败不应阻断删除流程
+                pass
     
     def get_statistics(self, db: Session) -> dict:
         """获取墙消息统计信息"""

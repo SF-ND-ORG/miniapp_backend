@@ -6,3 +6,6 @@ venv
 static/
 npmlog.txt
 app_config.json
+.netease_cookie
+project.config.json
+project.private.config.json

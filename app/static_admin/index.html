@@ -5,15 +5,16 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员控制台</title>
+    <meta name="referrer" content="no-referrer">
+    <title>点歌台播放器</title>
     <link rel="stylesheet" href="./styles.css">
 </head>
 
 <body>
     <main class="page">
         <section class="card">
-            <h1 class="card__title">管理员控制台</h1>
-            <p class="card__subtitle">使用后端颁发的 <code>X-Admin-Token</code> 访问密钥登录。</p>
+            <h1 class="card__title">点歌台播放器</h1>
+            <p class="card__subtitle">管理员控制台 · 使用后端颁发的 <code>X-Admin-Token</code> 访问密钥登录。</p>
             <form id="token-form" class="token-form">
                 <label for="token" class="token-form__label">访问密钥</label>
                 <input id="token" type="password" autocomplete="off" class="token-form__input"
@@ -25,9 +26,146 @@
 
         <section id="panel" class="card card--panel hidden">
             <header class="panel__header">
-                <h2>后台控制面板</h2>
+                <h2>点歌台播放器</h2>
                 <button id="logout" class="panel__logout">退出</button>
             </header>
+
+            <div class="panel__section player-section">
+                <div class="section__header">
+                    <h3 class="section__title">点歌台</h3>
+                    <div class="panel__actions-right">
+                        <label class="player-autoplay">
+                            <input id="player-autoplay" type="checkbox" checked>
+                            <span>自动连播</span>
+                        </label>
+                        <button id="player-refresh" class="panel__refresh" type="button">刷新队列</button>
+                        <span id="player-status" class="panel__status"></span>
+                    </div>
+                </div>
+
+                <div class="player">
+                    <div id="player-art" class="player__art">
+                        <img id="player-art-img" class="player__art-img hidden" alt="专辑封面"
+                            referrerpolicy="no-referrer">
+                        <span id="player-art-placeholder" class="player__art-placeholder">♪</span>
+                    </div>
+                    <div class="player__info">
+                        <p class="player__eyebrow">当前播放</p>
+                        <h4 id="player-title" class="player__title">暂无播放</h4>
+                        <p id="player-meta" class="player__meta">队列为空，等待同学点歌。</p>
+                        <p class="player__badges">
+                            <span id="player-trial" class="badge badge--trial hidden"></span>
+                            <span id="player-position" class="badge badge--user hidden"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="player__control-row">
+                    <button id="player-prev" class="player__button" type="button">上一首</button>
+                    <button id="player-toggle" class="player__button player__button--primary"
+                        type="button">播放</button>
+                    <button id="player-next" class="player__button" type="button">下一首</button>
+                    <button id="player-played" class="player__button" type="button">标记已播放</button>
+                </div>
+
+                <audio id="player-audio" class="player__audio" controls preload="none"></audio>
+                <p class="form-help">未登录或非会员时，接口可能只返回试听片段，播放到试听结束会自动暂停。</p>
+
+                <div class="player__queue">
+                    <div class="player__queue-header">
+                        <h4>当前排队 <span id="player-queue-count" class="badge badge--user">0</span></h4>
+                        <span class="form-help">队列每 20 秒自动刷新</span>
+                    </div>
+                    <table class="table" aria-label="点歌队列">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>歌曲</th>
+                                <th>点歌人</th>
+                                <th>点歌时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="player-queue">
+                            <tr>
+                                <td colspan="5" class="table__empty">暂无待播放歌曲。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel__section netease-section">
+                <div class="section__header">
+                    <h3 class="section__title">网易云账号</h3>
+                    <div class="panel__actions-right">
+                        <span id="netease-status" class="panel__status"></span>
+                        <button id="netease-refresh-status" class="panel__refresh" type="button">刷新状态</button>
+                        <button id="netease-logout" class="panel__logout hidden" type="button">退出登录</button>
+                    </div>
+                </div>
+
+                <div id="netease-account" class="netease-account hidden">
+                    <img id="netease-avatar" class="netease-account__avatar" alt="网易云头像"
+                        referrerpolicy="no-referrer">
+                    <div>
+                        <p id="netease-nickname" class="netease-account__name"></p>
+                        <p id="netease-account-meta" class="form-help"></p>
+                    </div>
+                </div>
+
+                <p class="form-help">
+                    登录后可获取完整歌曲播放地址；未登录时只能播放试听片段。密码登录因网易云盾验证暂不提供，请使用二维码或短信验证码登录。
+                </p>
+
+                <div id="netease-login-area">
+                    <div class="netease-tabs" role="tablist">
+                        <button id="netease-tab-qr" class="netease-tab netease-tab--active" data-tab="qr"
+                            type="button" role="tab" aria-selected="true">二维码登录</button>
+                        <button id="netease-tab-phone" class="netease-tab" data-tab="phone" type="button" role="tab"
+                            aria-selected="false">手机验证码登录</button>
+                    </div>
+
+                    <div id="netease-panel-qr" class="netease-panel">
+                        <button id="netease-qr-start" class="config-form__button" type="button">获取登录二维码</button>
+                        <div id="netease-qr-box" class="netease-qr hidden">
+                            <img id="netease-qr-img" class="netease-qr__img" alt="网易云登录二维码"
+                                referrerpolicy="no-referrer">
+                            <p id="netease-qr-status" class="netease-qr__status"></p>
+                        </div>
+                    </div>
+
+                    <div id="netease-panel-phone" class="netease-panel hidden">
+                        <form id="netease-phone-form" class="netease-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="netease-countrycode">国家码</label>
+                                    <input id="netease-countrycode" class="form-input" type="text" value="86"
+                                        maxlength="5" inputmode="numeric">
+                                </div>
+                                <div class="form-group">
+                                    <label for="netease-phone">手机号</label>
+                                    <input id="netease-phone" class="form-input" type="tel" placeholder="请输入手机号"
+                                        maxlength="20" inputmode="numeric">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="netease-captcha">短信验证码</label>
+                                <div class="netease-captcha-row">
+                                    <input id="netease-captcha" class="form-input" type="text"
+                                        placeholder="请输入验证码" maxlength="10" inputmode="numeric">
+                                    <button id="netease-send-captcha" class="panel__refresh"
+                                        type="button">发送验证码</button>
+                                </div>
+                            </div>
+                            <div class="config-form__footer">
+                                <button id="netease-phone-submit" type="submit" class="config-form__button">登录</button>
+                                <span id="netease-phone-status" class="panel__status"></span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
             <div class="panel__section">
                 <h3 class="section__title">用户管理</h3>
