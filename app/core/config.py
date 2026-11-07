@@ -33,6 +33,8 @@ class Settings:
     # 请求体大小限制（字节）
     MAX_JSON_BODY_BYTES: int = int(os.getenv("MAX_JSON_BODY_BYTES", "131072"))
     MAX_UPLOAD_BODY_BYTES: int = int(os.getenv("MAX_UPLOAD_BODY_BYTES", str(50 * 1024 * 1024)))
+    # 单张图片上传大小上限（字节），超过直接拒绝，避免大文件占用内存
+    MAX_IMAGE_UPLOAD_BYTES: int = int(os.getenv("MAX_IMAGE_UPLOAD_BYTES", str(10 * 1024 * 1024)))
     
     # WeChat配置
     WECHAT_APPID: str = os.getenv("WECHAT_APPID","ber")

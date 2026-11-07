@@ -1,6 +1,7 @@
 from datetime import datetime
 from app.db.models.base import BaseModel
-from sqlalchemy import Column, DateTime, Integer, String, Text, Boolean
+from sqlalchemy import Column, DateTime, Integer, String, Text, Boolean, ARRAY
+from sqlalchemy.ext.mutable import MutableList
 
 
 # 消息类型常量
@@ -38,7 +39,13 @@ class WallMessage(BaseModel):
     view_count = Column(Integer, nullable=False, default=0, comment="浏览次数")
     like_count = Column(Integer, nullable=False, default=0, comment="点赞次数")
     timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="发布时间")
-    like_users = Column(Integer, nullable=False, comment="点赞用户ID列表")
+    like_users = Column(
+        MutableList.as_mutable(ARRAY(Integer)),
+        nullable=False,
+        default=list,
+        server_default="{}",
+        comment="点赞用户ID列表",
+    )
     
     def __repr__(self):
         return f"<WallMessage {self.id} by User {self.user_id}: {self.title or self.content[:50]}>"

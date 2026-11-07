@@ -4,6 +4,7 @@ from sqlalchemy import desc, and_, or_
 
 from app.db.models.wall import WallMessage, MessageType, MessageStatus
 from app.db.repositories.base import BaseRepository
+from app.db.repositories.resources import resourcesManager
 from app.schemas.wall import WallMessageCreate, WallMessageUpdate
 
 
@@ -156,15 +157,34 @@ class WallRepository(BaseRepository[WallMessage, WallMessageCreate, WallMessageU
         message_id: int,
         status: str
     ) -> Optional[WallMessage]:
-        """更新消息状态"""
+        """更新消息状态；当消息被驳回(REJECTED)时，清理其关联图片文件"""
         message = self.get(db, message_id)
         if message:
+            old_status = message.status
             db.query(self.model).filter(self.model.id == message_id).update(
                 {self.model.status: status}
             )
             db.commit()
             db.refresh(message)
+            # 仅在被驳回（且之前不是已驳回）时删除图片，避免重复删除与误删
+            if status == MessageStatus.REJECTED and old_status != MessageStatus.REJECTED:
+                self._delete_message_pictures(message.files)
         return message
+
+    @staticmethod
+    def _delete_message_pictures(files: Optional[str]) -> None:
+        """按逗号分隔的 uid 列表删除磁盘上的图片文件（尽力而为，失败不影响主流程）"""
+        if not files:
+            return
+        uids = files.split(",")
+        for uid in uids:
+            uid = uid.strip()
+            if uid:
+                try:
+                    resourcesManager.delete_picture(uid)
+                except Exception:
+                    # 图片清理失败不应阻断状态更新，仅记录日志
+                    pass
     
     def get_statistics(self, db: Session) -> dict:
         """获取墙消息统计信息"""
